@@ -1,0 +1,16 @@
+{
+    "name": "anime-db/my-anime-list-synchronization-bundle",
+    "license": "GPL-3.0",
+    "type": "anime-db-plugin",
+    "description": "Synchronizes the changes in the list of items with the MyAnimeList.net",
+    "homepage": "http://github.com/anime-db/my-anime-list-synchronization-bundle",
+    "version": "0.0.1",
+    "autoload": {
+        "psr-0": { "AnimeDb\\Bundle\\MyAnimeListSynchronizationBundle": "src/" }
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "anime-db/catalog-bundle": "0.3.*"
+    },
+    "minimum-stability": "dev"
+}
