@@ -1,6 +1,6 @@
 <?php
 
-namespace AnimeDb\Bundle\MyAnimeListSynchronizationBundle\DependencyInjection;
+namespace AnimeDb\Bundle\MyAnimeListSyncBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;

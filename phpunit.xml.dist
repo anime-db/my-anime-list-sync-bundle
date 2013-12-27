@@ -13,7 +13,7 @@
 >
 
     <testsuites>
-        <testsuite name="MyAnimeListSynchronizationBundle Test Suite">
+        <testsuite name="MyAnimeListSyncBundle Test Suite">
             <directory>./src/*/Bundle/*Bundle/Tests</directory>
         </testsuite>
     </testsuites>

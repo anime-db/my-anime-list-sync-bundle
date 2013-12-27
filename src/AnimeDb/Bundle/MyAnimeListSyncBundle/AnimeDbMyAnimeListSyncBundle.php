@@ -8,16 +8,16 @@
  * @license   http://opensource.org/licenses/GPL-3.0 GPL v3
  */
 
-namespace AnimeDb\Bundle\MyAnimeListSynchronizationBundle;
+namespace AnimeDb\Bundle\MyAnimeListSyncBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
  * Bundle
  *
- * @package AnimeDb\Bundle\MyAnimeListSynchronizationBundle
+ * @package AnimeDb\Bundle\MyAnimeListSyncBundle
  * @author  Peter Gribanov <info@peter-gribanov.ru>
  */
-class AnimeDbMyAnimeListSynchronizationBundle extends Bundle
+class AnimeDbMyAnimeListSyncBundle extends Bundle
 {
 }
