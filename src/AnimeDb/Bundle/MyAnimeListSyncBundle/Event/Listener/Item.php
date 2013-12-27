@@ -35,7 +35,7 @@ class Item
      *
      * @var string
      */
-    const API_URL = 'http://myanimelist.net/api/animelist/';
+    const API_URL = 'http://myanimelist.net/api/';
 
     /**
      * User name
@@ -126,14 +126,18 @@ class Item
     public function onPostPersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_insert) {
+        if ($entity instanceof ItemEntity && $this->sync_insert && ($id = $this->getItemId($entity))) {
             $client = new Client(self::API_URL);
-            $client->post('/add/id.xml', null, [
-                'data' => $this->templating->render(
-                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $entity]
-                )
-            ])
+            $client->post(
+                'animelist/add/{id}.xml',
+                ['id' => $id],
+                [
+                    'data' => $this->templating->render(
+                        'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                        ['item' => $entity]
+                    )
+                ]
+            )
                 ->setAuth($this->user_name, $this->user_password)
                 ->send();
         }
@@ -171,7 +175,5 @@ class Item
                 break;
             }
         }
-
-        // TODO search by name in MyAnimeList
     }
 }
