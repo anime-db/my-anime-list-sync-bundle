@@ -8,6 +8,6 @@ services:
             - %anime_db.my_anime_list_sync.sync.insert%
             - %anime_db.my_anime_list_sync.sync.update%
             - @templating
-        tags: [{ name: doctrine.event_listener, event: postRemove, method: onPostRemove }]
-        tags: [{ name: doctrine.event_listener, event: postPersist, method: onPostPersist }]
-        tags: [{ name: doctrine.event_listener, event: postUpdate, method: onPostUpdate }]
+        tags: [{ name: doctrine.event_listener, event: postRemove }]
+        tags: [{ name: doctrine.event_listener, event: postPersist }]
+        tags: [{ name: doctrine.event_listener, event: preUpdate }]

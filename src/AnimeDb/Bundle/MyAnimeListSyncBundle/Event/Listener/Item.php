@@ -112,7 +112,7 @@ class Item
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
-    public function onPostRemove(LifecycleEventArgs $args)
+    public function postRemove(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_remove) {
@@ -138,7 +138,7 @@ class Item
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
-    public function onPostPersist(LifecycleEventArgs $args)
+    public function postPersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
@@ -177,7 +177,7 @@ class Item
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
-    public function onPostUpdate(LifecycleEventArgs $args)
+    public function preUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
