@@ -115,7 +115,7 @@ class Item
     public function onPostRemove(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_remove) {
+        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_remove) {
             // TODO remove item
         }
     }
@@ -129,7 +129,7 @@ class Item
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        if ($entity instanceof ItemEntity && $this->sync_insert) {
+        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_insert) {
             if ($id = $this->getItemId($entity)) {
                 $id = $this->findIdForItem($entity);
                 // add source
@@ -167,7 +167,7 @@ class Item
     public function onPostUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_update) {
+        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
             // TODO update item
         }
     }
