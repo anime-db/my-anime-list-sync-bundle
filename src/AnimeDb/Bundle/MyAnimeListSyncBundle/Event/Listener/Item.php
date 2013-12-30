@@ -116,7 +116,20 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_remove) {
-            // TODO remove item
+            if ($id = $this->getItemId($entity) || $id = $this->findIdForItem($entity)) {
+                $this->sendRequest('delete', $id, $this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                    ['item' => $entity]
+                ));
+            } else {
+                $notice = new Notice();
+                $notice->setMessage($this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle:Notice:failed_delete.html.twig',
+                    ['item' => $entity]
+                ));
+                $em->persist($notice);
+                $em->flush();
+            }
         }
     }
 

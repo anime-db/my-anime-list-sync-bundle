@@ -6,6 +6,10 @@
                 <source><![CDATA[Failed to add <a href="%show%">%name%</a> in the base MyAnimeList. <a href="%add%">Add</a> a reference to external sources item to connect the item on MyAnimeList.]]></source>
                 <target><![CDATA[Не удалось выполнить добавление <a href="%show%">%name%</a> в базу MyAnimeList. <a href="%add%">Добавьте</a> ссылку  во внешние источники для связи с записью на MyAnimeList.]]></target>
             </trans-unit>
+            <trans-unit id="1">
+                <source>Failed to delete "%name%" from the base MyAnimeList.</source>
+                <target>Не удалось выполнить удаление "%name%" из базы MyAnimeList.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
