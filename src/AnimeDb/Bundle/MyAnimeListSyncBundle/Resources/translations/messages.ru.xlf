@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source><![CDATA[Failed to add <a href="%show%">%name%</a> in the base MyAnimeList. <a href="%add%">Add</a> a reference to external sources item to connect the item on MyAnimeList.]]></source>
+                <target><![CDATA[Не удалось выполнить добавление <a href="%show%">%name%</a> в базу MyAnimeList. <a href="%add%">Добавьте</a> ссылку  во внешние источники для связи с записью на MyAnimeList.]]></target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
