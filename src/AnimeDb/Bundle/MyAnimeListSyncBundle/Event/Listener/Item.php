@@ -14,6 +14,8 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemEntity;
 use Symfony\Component\Templating\EngineInterface;
 use Guzzle\Http\Client;
+use AnimeDb\Bundle\AppBundle\Entity\Notice;
+use AnimeDb\Bundle\CatalogBundle\Entity\Source;
 
 /**
  * Listener item changes
@@ -126,20 +128,34 @@ class Item
     public function onPostPersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_insert && ($id = $this->getItemId($entity))) {
-            $client = new Client(self::API_URL);
-            $client->post(
-                'animelist/add/{id}.xml',
-                ['id' => $id],
-                [
-                    'data' => $this->templating->render(
-                        'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                        ['item' => $entity]
-                    )
-                ]
-            )
-                ->setAuth($this->user_name, $this->user_password)
-                ->send();
+        $em = $args->getEntityManager();
+        if ($entity instanceof ItemEntity && $this->sync_insert) {
+            if ($id = $this->getItemId($entity)) {
+                $id = $this->findIdForItem($entity);
+                // add source
+                if (is_numeric($id)) {
+                    $source = new Source();
+                    $source->setUrl(self::HOST.'anime/'.$id.'/');
+                    $entity->addSource($source);
+                    $em->persist($entity);
+                    $em->flush();
+                }
+            }
+
+            if (is_numeric($id)) {
+                $this->sendRequest('add', $id, $this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                    ['item' => $entity]
+                ));
+            } else {
+                $notice = new Notice();
+                $notice->setMessage($this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle:Notice:failed_insert.html.twig',
+                    ['item' => $entity]
+                ));
+                $em->persist($notice);
+                $em->flush();
+            }
         }
     }
 
@@ -175,5 +191,70 @@ class Item
                 break;
             }
         }
+    }
+
+    /**
+     * Try to find the id for the item
+     *
+     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
+     *
+     * @return integer|null
+     */
+    protected function findIdForItem(ItemEntity $item)
+    {
+        // find name for search
+        $query = '';
+        if (preg_match('/[a-z]+/i', $item->getName())) {
+            $query = $item->getName();
+        } else {
+            /* @var $name \AnimeDb\Bundle\CatalogBundle\Entity\Name */
+            foreach ($item->getNames() as $name) {
+                if (preg_match('/[a-z]+/i', $name->getName())) {
+                    $query = $name->getName();
+                    break;
+                }
+            }
+        }
+
+        // try search
+        if ($query) {
+            $client = new Client(self::API_URL);
+            /* @var $request \Guzzle\Http\Message\Request */
+            $request = $client->get('animesearch.xml', null, ['q' => $query]);
+            $data = $request->send();
+
+            if ($request->getState() == 200) {
+                $doc = new \DOMDocument();
+                $doc->loadXML($data);
+                $xpath = new \DOMXPath($doc);
+                $ids = $xpath->query('entry/id');
+                if ($ids->length == 1) {
+                    return (int)$ids->item(0)->nodeValue;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Send request
+     *
+     * @param string $action add|update|delete
+     * @param integer $id
+     * @param string|null $data
+     *
+     * @return string
+     */
+    protected function sendRequest($action, $id, $data = null)
+    {
+        $client = new Client(self::API_URL);
+        return $client->post(
+                'animelist/{action}/{id}.xml',
+                ['action' => $action, 'id' => $id],
+                $data ? ['data' => $data] : []
+            )
+            ->setAuth($this->user_name, $this->user_password)
+            ->send();
     }
 }
