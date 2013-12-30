@@ -181,7 +181,32 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
-            // TODO update item
+            if ($id = $this->getItemId($entity)) {
+                $id = $this->findIdForItem($entity);
+                // add source
+                if (is_numeric($id)) {
+                    $source = new Source();
+                    $source->setUrl(self::HOST.'anime/'.$id.'/');
+                    $entity->addSource($source);
+                    $em->persist($entity);
+                    $em->flush();
+                }
+            }
+
+            if (is_numeric($id)) {
+                $this->sendRequest('update', $id, $this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                    ['item' => $entity]
+                ));
+            } else {
+                $notice = new Notice();
+                $notice->setMessage($this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle:Notice:failed_update.html.twig',
+                    ['item' => $entity]
+                ));
+                $em->persist($notice);
+                $em->flush();
+            }
         }
     }
 
