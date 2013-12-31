@@ -12,6 +12,8 @@ namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting as SettingEntity;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Setting as SettingForm;
 
 /**
  * Settings
@@ -30,6 +32,12 @@ class SettingsController extends Controller
      */
     public function indexAction(Request $request)
     {
-        return $this->render('AnimeDbMyAnimeListSyncBundle:Settings:index.html.twig');
+        $entity = new SettingEntity();
+        /* @var $form \Symfony\Component\Form\Form */
+        $form = $this->createForm(new SettingForm(), $entity);
+
+        return $this->render('AnimeDbMyAnimeListSyncBundle:Settings:index.html.twig', [
+            'form'  => $form->createView()
+        ]);
     }
 }
