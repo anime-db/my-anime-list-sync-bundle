@@ -18,6 +18,26 @@
                 <source>MyAnimeList sync settings</source>
                 <target>MyAnimeList параметры синхронизации</target>
             </trans-unit>
+            <trans-unit id="5">
+                <source>User name</source>
+                <target>Имя пользователя</target>
+            </trans-unit>
+            <trans-unit id="6">
+                <source>User password</source>
+                <target>Пароль пользователя</target>
+            </trans-unit>
+            <trans-unit id="7">
+                <source>Sync remove</source>
+                <target>Синхронизировать удаление</target>
+            </trans-unit>
+            <trans-unit id="8">
+                <source>Sync insert</source>
+                <target>Синхронизировать вставку</target>
+            </trans-unit>
+            <trans-unit id="9">
+                <source>Sync update</source>
+                <target>Синхронизировать обновление</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
