@@ -32,10 +32,13 @@ class Setting extends AbstractType
     {
         $builder
             ->add('user_name', 'text', [
-                'label' => 'User name'
+                'label' => 'User name',
+                'required' => false
             ])
             ->add('user_password', 'password', [
-                'label' => 'User password'
+                'label' => 'User password',
+                'always_empty' => true,
+                'required' => false
             ])
             ->add('sync_remove', 'checkbox', [
                 'label' => 'Sync remove'

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source>Password is required to fill if the username is specified</source>
+                <target>Пароль обязателен для заполнения если указанно имя пользователя</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

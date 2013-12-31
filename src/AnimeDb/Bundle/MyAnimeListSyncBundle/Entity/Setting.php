@@ -11,10 +11,13 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Entity;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\ExecutionContextInterface;
 
 /**
  * Plugin settings
  *
+ * @Assert\Callback(methods={"isPasswordNotEmpty"})
  * @package AnimeDb\Bundle\MyAnimeListSyncBundle\Entity
  * @author  Peter Gribanov <info@peter-gribanov.ru>
  */
@@ -174,5 +177,17 @@ class Setting
     {
         $this->sync_update = $sync_update;
         return $this;
+    }
+
+    /**
+     * Is password not empty if name is set
+     *
+     * @param \Symfony\Component\Validator\ExecutionContextInterface $context
+     */
+    public function isPasswordNotEmpty(ExecutionContextInterface $context)
+    {
+        if ($this->getUserName() && !$this->getUserPassword()) {
+            $context->addViolationAt('user_password', 'Password is required to fill if the username is specified');
+        }
     }
 }
