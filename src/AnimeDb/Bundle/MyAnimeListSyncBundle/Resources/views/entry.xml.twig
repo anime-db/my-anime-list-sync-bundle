@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entry>
-	<episode>{{ item.episodesNumber }}</episode>
+	<episode>{{ item.episodesNumber|replace({'+': ''}) }}</episode>
 	<status>completed</status>
-	<score>{{ item.rating }}</score>
+	<score>{{ item.rating * 2 }}</score>
 	<downloaded_episodes></downloaded_episodes>
 	<storage_type></storage_type>
 	<storage_value></storage_value>
