@@ -85,6 +85,29 @@ class Setting
     }
 
     /**
+     * Get user password
+     * 
+     * @return string
+     */
+    public function getUserPassword()
+    {
+        return $this->user_password;
+    }
+
+    /**
+     * Set user password
+     *
+     * @param string $user_password
+     *
+     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     */
+    public function setUserPassword($user_password)
+    {
+        $this->user_password = $user_password;
+        return $this;
+    }
+
+    /**
      * Get sync remove
      * 
      * @return boolean
