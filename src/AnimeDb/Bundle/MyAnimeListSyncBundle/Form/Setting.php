@@ -40,13 +40,16 @@ class Setting extends AbstractType
                 'required' => false
             ])
             ->add('sync_remove', 'checkbox', [
-                'label' => 'Sync remove'
+                'label' => 'Sync remove',
+                'required' => false
             ])
             ->add('sync_insert', 'checkbox', [
-                'label' => 'Sync insert'
+                'label' => 'Sync insert',
+                'required' => false
             ])
             ->add('sync_update', 'checkbox', [
-                'label' => 'Sync update'
+                'label' => 'Sync update',
+                'required' => false
             ]);
     }
 
