@@ -145,7 +145,7 @@ class Item
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
-    public function prePersist()
+    public function prePersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->sync_insert) {
