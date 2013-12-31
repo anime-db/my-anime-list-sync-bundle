@@ -14,3 +14,8 @@ services:
             - { name: doctrine.event_listener, event: postPersist }
             - { name: doctrine.event_listener, event: preUpdate }
             - { name: doctrine.event_listener, event: postUpdate }
+
+    anime_db.my_anime_list_sync.setting:
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Setting
+        tags:
+            -  { name: anime_db.setting }
