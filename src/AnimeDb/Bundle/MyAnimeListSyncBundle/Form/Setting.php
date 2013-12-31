@@ -35,9 +35,8 @@ class Setting extends AbstractType
                 'label' => 'User name',
                 'required' => false
             ])
-            ->add('user_password', 'password', [
+            ->add('user_password', 'text', [
                 'label' => 'User password',
-                'always_empty' => true,
                 'required' => false
             ])
             ->add('sync_remove', 'checkbox', [
