@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting as SettingEntity;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Setting as SettingForm;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Settings
@@ -33,8 +34,29 @@ class SettingsController extends Controller
     public function indexAction(Request $request)
     {
         $entity = new SettingEntity();
+        $entity->setUserName($this->container->getParameter('anime_db.my_anime_list_sync.user.name'));
+        $entity->setUserPassword($this->container->getParameter('anime_db.my_anime_list_sync.user.password'));
+        $entity->setSyncInsert($this->container->getParameter('anime_db.my_anime_list_sync.sync.insert'));
+        $entity->setSyncRemove($this->container->getParameter('anime_db.my_anime_list_sync.sync.remove'));
+        $entity->setSyncUpdate($this->container->getParameter('anime_db.my_anime_list_sync.sync.update'));
+
         /* @var $form \Symfony\Component\Form\Form */
         $form = $this->createForm(new SettingForm(), $entity);
+
+        if ($request->isMethod('POST')) {
+            $form->handleRequest($request);
+            if ($form->isValid()) {
+                // update params
+                $file = $this->container->getParameter('kernel.root_dir').'/config/parameters.yml';
+                $parameters = Yaml::parse($file);
+                $parameters['parameters']['anime_db.my_anime_list_sync.user.name'] = $entity->getUserName();
+                $parameters['parameters']['anime_db.my_anime_list_sync.user.password'] = $entity->getUserPassword();
+                $parameters['parameters']['anime_db.my_anime_list_sync.sync.insert'] = $entity->getSyncInsert();
+                $parameters['parameters']['anime_db.my_anime_list_sync.sync.remove'] = $entity->getSyncRemove();
+                $parameters['parameters']['anime_db.my_anime_list_sync.sync.update'] = $entity->getSyncUpdate();
+                file_put_contents($file, Yaml::dump($parameters));
+            }
+        }
 
         return $this->render('AnimeDbMyAnimeListSyncBundle:Settings:index.html.twig', [
             'form'  => $form->createView()
