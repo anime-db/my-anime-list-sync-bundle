@@ -320,8 +320,8 @@ class Item
         $client = new Client(self::API_URL);
         try {
             return $client->post(
-                    'animelist/{action}/{id}.xml',
-                    ['action' => $action, 'id' => $id],
+                    'animelist/'.$action.'/'.$id.'.xml',
+                    null,
                     $data ? ['data' => $data] : []
                 )
                 ->setAuth($this->user_name, $this->user_password)
