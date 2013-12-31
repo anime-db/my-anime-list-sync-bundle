@@ -17,6 +17,7 @@ use Guzzle\Http\Client;
 use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
 use Guzzle\Http\Exception\BadResponseException;
+use Doctrine\ORM\EntityManager;
 
 /**
  * Listener item changes
@@ -140,6 +141,19 @@ class Item
     }
 
     /**
+     * Pre persist add item source if not exists
+     *
+     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     */
+    public function prePersist()
+    {
+        $entity = $args->getEntity();
+        if ($entity instanceof ItemEntity && $this->sync_insert) {
+            $this->addSource($entity, $args->getEntityManager());
+        }
+    }
+
+    /**
      * Post persist
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
@@ -149,19 +163,7 @@ class Item
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
         if ($entity instanceof ItemEntity && $this->sync_insert) {
-            if (!($id = $this->getItemId($entity))) {
-                $id = $this->findIdForItem($entity);
-                // add source
-                if (is_numeric($id)) {
-                    $source = new Source();
-                    $source->setUrl(self::HOST.'anime/'.$id.'/');
-                    $entity->addSource($source);
-                    $em->persist($entity);
-                    $em->flush();
-                }
-            }
-
-            if (is_numeric($id)) {
+            if ($id = $this->getItemId($entity)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -186,14 +188,23 @@ class Item
     public function preUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_update &&
-            (!$this->getItemId($entity) && ($id = $this->findIdForItem($entity)))
-        ) {
+        if ($entity instanceof ItemEntity && $this->sync_update) {
+            $this->addSource($entity, $args->getEntityManager());
+        }
+    }
+
+    /**
+     * 
+     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
+     * @param \Doctrine\ORM\EntityManager $em
+     */
+    protected function addSource(ItemEntity $item, EntityManager $em)
+    {
+        if (!$this->getItemId($item) && ($id = $this->findIdForItem($item))) {
             $source = new Source();
             $source->setUrl(self::HOST.'anime/'.$id.'/');
-            $entity->addSource($source);
+            $item->addSource($source);
 
-            $em = $args->getEntityManager();
             $em->persist($source);
             $em->flush();
         }
