@@ -16,6 +16,7 @@ use Symfony\Component\Templating\EngineInterface;
 use Guzzle\Http\Client;
 use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
+use Guzzle\Http\Exception\BadResponseException;
 
 /**
  * Listener item changes
@@ -101,22 +102,27 @@ class Item
     ) {
         $this->user_name = $user_name;
         $this->user_password = $user_password;
-        $this->sync_remove = $sync_remove;
-        $this->sync_insert = $sync_insert;
-        $this->sync_update = $sync_update;
+        if ($this->user_name) {
+            $this->sync_remove = $sync_remove;
+            $this->sync_insert = $sync_insert;
+            $this->sync_update = $sync_update;
+        } else {
+            $this->sync_remove = $this->sync_insert = $this->sync_update = false;
+        }
         $this->templating = $templating;
     }
 
     /**
-     * On post remove
+     * Post remove
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
     public function postRemove(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_remove) {
-            if ($id = $this->getItemId($entity) || $id = $this->findIdForItem($entity)) {
+        $em = $args->getEntityManager();
+        if ($entity instanceof ItemEntity && $this->sync_remove) {
+            if (($id = $this->getItemId($entity)) || ($id = $this->findIdForItem($entity))) {
                 $this->sendRequest('delete', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -134,7 +140,7 @@ class Item
     }
 
     /**
-     * On post persist
+     * Post persist
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
@@ -142,8 +148,8 @@ class Item
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_insert) {
-            if ($id = $this->getItemId($entity)) {
+        if ($entity instanceof ItemEntity && $this->sync_insert) {
+            if (!($id = $this->getItemId($entity))) {
                 $id = $this->findIdForItem($entity);
                 // add source
                 if (is_numeric($id)) {
@@ -173,27 +179,36 @@ class Item
     }
 
     /**
-     * On post update
+     * Pre update add item source if not exists
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
     public function preUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
+        if ($entity instanceof ItemEntity && $this->sync_update &&
+            (!$this->getItemId($entity) && ($id = $this->findIdForItem($entity)))
+        ) {
+            $source = new Source();
+            $source->setUrl(self::HOST.'anime/'.$id.'/');
+            $entity->addSource($source);
+
+            $em = $args->getEntityManager();
+            $em->persist($source);
+            $em->flush();
+        }
+    }
+
+    /**
+     * Post update
+     *
+     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     */
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
             if ($id = $this->getItemId($entity)) {
-                $id = $this->findIdForItem($entity);
-                // add source
-                if (is_numeric($id)) {
-                    $source = new Source();
-                    $source->setUrl(self::HOST.'anime/'.$id.'/');
-                    $entity->addSource($source);
-                    $em->persist($entity);
-                    $em->flush();
-                }
-            }
-
-            if (is_numeric($id)) {
                 $this->sendRequest('update', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -204,6 +219,7 @@ class Item
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_update.html.twig',
                     ['item' => $entity]
                 ));
+                $em = $args->getEntityManager();
                 $em->persist($notice);
                 $em->flush();
             }
@@ -258,17 +274,21 @@ class Item
         if ($query) {
             $client = new Client(self::API_URL);
             /* @var $request \Guzzle\Http\Message\Request */
-            $request = $client->get('animesearch.xml', null, ['q' => $query]);
-            $data = $request->send();
+            $request = $client->get('anime/search.xml')
+                ->setAuth($this->user_name, $this->user_password);
+            $request->getQuery()->set('q', $query);
+            try {
+                $data = $request->send()->getBody(true);
+            } catch (BadResponseException $e) {
+                return null;
+            }
 
-            if ($request->getState() == 200) {
-                $doc = new \DOMDocument();
-                $doc->loadXML($data);
-                $xpath = new \DOMXPath($doc);
-                $ids = $xpath->query('entry/id');
-                if ($ids->length == 1) {
-                    return (int)$ids->item(0)->nodeValue;
-                }
+            $doc = new \DOMDocument();
+            $doc->loadXML($data);
+            $xpath = new \DOMXPath($doc);
+            $ids = $xpath->query('entry/id');
+            if ($ids->length == 1) {
+                return (int)$ids->item(0)->nodeValue;
             }
         }
 
@@ -282,17 +302,19 @@ class Item
      * @param integer $id
      * @param string|null $data
      *
-     * @return string
+     * @return \Guzzle\Http\Message\Response|null
      */
     protected function sendRequest($action, $id, $data = null)
     {
         $client = new Client(self::API_URL);
-        return $client->post(
-                'animelist/{action}/{id}.xml',
-                ['action' => $action, 'id' => $id],
-                $data ? ['data' => $data] : []
-            )
-            ->setAuth($this->user_name, $this->user_password)
-            ->send();
+        try {
+            return $client->post(
+                    'animelist/{action}/{id}.xml',
+                    ['action' => $action, 'id' => $id],
+                    $data ? ['data' => $data] : []
+                )
+                ->setAuth($this->user_name, $this->user_password)
+                ->send();
+        } catch (BadResponseException $e) {}
     }
 }
