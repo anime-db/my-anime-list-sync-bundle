@@ -220,7 +220,8 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
             if ($id = $this->getItemId($entity)) {
-                $this->sendRequest('update', $id, $this->templating->render(
+                // if item is not added update is not work
+                $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
                 ));
