@@ -295,6 +295,10 @@ class Item
                 return null;
             }
 
+            if ($data == 'No results') {
+                return null;
+            }
+
             $doc = new \DOMDocument();
             $doc->loadXML($data);
             $xpath = new \DOMXPath($doc);
