@@ -221,11 +221,20 @@ class Item
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
         if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
-            if ($id = $this->getId($entity, $em)) {
-                $this->sendRequest('update', $id, $this->templating->render(
+            /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
+            $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($entity->getId());
+            if ($mal_item instanceof ItemMal) {
+                $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
                 ));
+
+            } elseif ($id = $this->getId($entity, $em)) {
+                $this->sendRequest('add', $mal_item->getId(), $this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                    ['item' => $entity]
+                ));
+
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
