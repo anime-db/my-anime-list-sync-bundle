@@ -319,7 +319,7 @@ class Item
             }
 
             $doc = new \DOMDocument();
-            $doc->loadXML($data);
+            $doc->loadXML(html_entity_decode($data));
             $xpath = new \DOMXPath($doc);
             $ids = $xpath->query('entry/id');
             if ($ids->length == 1) {
