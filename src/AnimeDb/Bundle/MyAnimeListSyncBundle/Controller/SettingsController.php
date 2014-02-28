@@ -55,6 +55,9 @@ class SettingsController extends Controller
                 $parameters['parameters']['anime_db.my_anime_list_sync.sync.remove'] = $entity->getSyncRemove();
                 $parameters['parameters']['anime_db.my_anime_list_sync.sync.update'] = $entity->getSyncUpdate();
                 file_put_contents($file, Yaml::dump($parameters));
+
+                // clear cache
+                $this->get('anime_db.cache_clearer')->clear();
             }
         }
 

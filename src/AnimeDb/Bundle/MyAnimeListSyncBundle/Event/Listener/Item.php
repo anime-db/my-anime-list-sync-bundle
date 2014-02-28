@@ -11,13 +11,14 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemEntity;
+use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemCatalog;
 use Symfony\Component\Templating\EngineInterface;
 use Guzzle\Http\Client;
 use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
 use Guzzle\Http\Exception\BadResponseException;
 use Doctrine\ORM\EntityManager;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 
 /**
  * Listener item changes
@@ -122,8 +123,8 @@ class Item
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        if ($entity instanceof ItemEntity && $this->sync_remove) {
-            if (($id = $this->getItemId($entity)) || ($id = $this->findIdForItem($entity))) {
+        if ($entity instanceof ItemCatalog && $this->sync_remove) {
+            if ($id = $this->getId($entity, $em)) {
                 $this->sendRequest('delete', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -148,7 +149,7 @@ class Item
     public function prePersist(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_insert) {
+        if ($entity instanceof ItemCatalog && $this->sync_insert) {
             $this->addSource($entity, $args->getEntityManager());
         }
     }
@@ -162,8 +163,8 @@ class Item
     {
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
-        if ($entity instanceof ItemEntity && $this->sync_insert) {
-            if ($id = $this->getItemId($entity)) {
+        if ($entity instanceof ItemCatalog && $this->sync_insert) {
+            if ($id = $this->getId($entity, $em)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -188,7 +189,7 @@ class Item
     public function preUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->sync_update) {
+        if ($entity instanceof ItemCatalog && $this->sync_update) {
             $this->addSource($entity, $args->getEntityManager());
         }
     }
@@ -198,9 +199,9 @@ class Item
      * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
      * @param \Doctrine\ORM\EntityManager $em
      */
-    protected function addSource(ItemEntity $item, EntityManager $em)
+    protected function addSource(ItemCatalog $item, EntityManager $em)
     {
-        if (!$this->getItemId($item) && ($id = $this->findIdForItem($item))) {
+        if (!$this->getId($item, $em) && ($id = $this->findIdForItem($item))) {
             $source = new Source();
             $source->setUrl(self::HOST.'anime/'.$id.'/');
             $item->addSource($source);
@@ -218,19 +219,28 @@ class Item
     public function postUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemEntity && $this->user_name && $this->sync_update) {
-            if ($id = $this->getItemId($entity)) {
-                $this->sendRequest('update', $id, $this->templating->render(
+        $em = $args->getEntityManager();
+        if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
+            /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
+            $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($entity->getId());
+            if ($mal_item instanceof ItemMal) {
+                $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
                 ));
+
+            } elseif ($id = $this->getId($entity, $em)) {
+                $this->sendRequest('add', $mal_item->getId(), $this->templating->render(
+                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+                    ['item' => $entity]
+                ));
+
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_update.html.twig',
                     ['item' => $entity]
                 ));
-                $em = $args->getEntityManager();
                 $em->persist($notice);
                 $em->flush();
             }
@@ -241,10 +251,11 @@ class Item
      * Get MyAnimeList id for item
      *
      * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
+     * @param \Doctrine\ORM\EntityManager $em
      *
      * @return integer|null
      */
-    protected function getItemId(ItemEntity $item)
+    protected function getId(ItemCatalog $item, EntityManager $em)
     {
         // search in sources
         /* @var $source \AnimeDb\Bundle\CatalogBundle\Entity\Source */
@@ -256,16 +267,25 @@ class Item
                 break;
             }
         }
+
+        // get MyAnimeList item link
+        /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
+        $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($item->getId());
+        if ($mal_item instanceof ItemMal) {
+            return $mal_item->getId();
+        }
+
+        return null;
     }
 
     /**
-     * Try to find the id for the item
+     * Try to find the MyAnimeList id for the item
      *
      * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
      *
      * @return integer|null
      */
-    protected function findIdForItem(ItemEntity $item)
+    protected function findIdForItem(ItemCatalog $item)
     {
         // find name for search
         $query = '';
@@ -294,8 +314,12 @@ class Item
                 return null;
             }
 
+            if ($data == 'No results') {
+                return null;
+            }
+
             $doc = new \DOMDocument();
-            $doc->loadXML($data);
+            $doc->loadXML(html_entity_decode($data));
             $xpath = new \DOMXPath($doc);
             $ids = $xpath->query('entry/id');
             if ($ids->length == 1) {
