@@ -43,6 +43,13 @@ class Item
     const API_URL = 'http://myanimelist.net/api/';
 
     /**
+     * API key
+     *
+     * @var string
+     */
+    const API_KEY = '8069EC4798E98A3BC14382D9DAA2498C';
+
+    /**
      * User name
      *
      * @var string
@@ -348,6 +355,7 @@ class Item
                     null,
                     $data ? ['data' => $data] : []
                 )
+                ->setHeader('User-Agent', 'api-team-'.self::API_KEY)
                 ->setAuth($this->user_name, $this->user_password)
                 ->send();
         } catch (BadResponseException $e) {}
