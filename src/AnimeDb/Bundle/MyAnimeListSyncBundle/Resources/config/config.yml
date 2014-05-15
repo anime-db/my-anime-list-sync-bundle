@@ -1,0 +1,6 @@
+assetic:
+    bundles: [ AnimeDbMyAnimeListSyncBundle ]
+    assets:
+        stylesheets:
+            inputs:
+                - @AnimeDbMyAnimeListSyncBundle/Resources/public/css/plugin.css
