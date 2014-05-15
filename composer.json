@@ -4,13 +4,13 @@
     "type": "anime-db-plugin",
     "description": "Synchronizes the changes in the list of items with the MyAnimeList.net",
     "homepage": "http://github.com/anime-db/my-anime-list-sync-bundle",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "autoload": {
         "psr-0": { "AnimeDb\\Bundle\\MyAnimeListSyncBundle": "src/" }
     },
     "require": {
         "php": ">=5.4.0",
-        "anime-db/catalog-bundle": "0.4.*"
+        "anime-db/catalog-bundle": ">=0.4.8"
     },
     "minimum-stability": "dev"
 }
