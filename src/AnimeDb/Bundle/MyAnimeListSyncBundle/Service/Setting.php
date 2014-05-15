@@ -28,7 +28,7 @@ class Setting extends SettingPlugin
      */
     public function getName()
     {
-        return 'my-anime-list-sync-bundle';
+        return 'my-anime-list';
     }
 
     /**
@@ -50,6 +50,7 @@ class Setting extends SettingPlugin
      */
     public function buildMenu(ItemInterface $item)
     {
-        $item->addChild('MyAnimeList', ['route' => 'my_anime_list_sync_settings']);
+        $item->addChild('MyAnimeList', ['route' => 'my_anime_list_sync_settings'])
+            ->setLinkAttribute('class', 'icon-label icon-label-plugin-my-anime-list');
     }
 }
