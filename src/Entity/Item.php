@@ -11,6 +11,7 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Annotations\Annotation\IgnoreAnnotation;
 use AnimeDb\Bundle\CatalogBundle\Entity\Item as CatalogItem;
 
 /**
