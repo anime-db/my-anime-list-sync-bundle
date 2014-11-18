@@ -41,7 +41,7 @@ class Setting
      *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var string
+     * @var boolean
      */
     protected $sync_remove = true;
 
@@ -50,7 +50,7 @@ class Setting
      *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var string
+     * @var boolean
      */
     protected $sync_insert = true;
 
@@ -59,7 +59,7 @@ class Setting
      *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var string
+     * @var boolean
      */
     protected $sync_update = true;
 
