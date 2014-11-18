@@ -251,7 +251,7 @@ class Item
      *
      * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      *
-     * @return integer|null
+     * @return integer
      */
     protected function getId(LifecycleEventArgs $args)
     {
@@ -274,7 +274,7 @@ class Item
             return $mal_item->getId();
         }
 
-        return null;
+        return 0;
     }
 
     /**
