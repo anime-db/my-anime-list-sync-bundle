@@ -14,7 +14,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting as SettingEntity;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type\Setting as SettingForm;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Settings
@@ -47,14 +46,13 @@ class SettingsController extends Controller
             $form->handleRequest($request);
             if ($form->isValid()) {
                 // update params
-                $file = $this->container->getParameter('kernel.root_dir').'/config/parameters.yml';
-                $parameters = Yaml::parse($file);
-                $parameters['parameters']['anime_db.my_anime_list_sync.user.name'] = $entity->getUserName();
-                $parameters['parameters']['anime_db.my_anime_list_sync.user.password'] = $entity->getUserPassword();
-                $parameters['parameters']['anime_db.my_anime_list_sync.sync.insert'] = $entity->getSyncInsert();
-                $parameters['parameters']['anime_db.my_anime_list_sync.sync.remove'] = $entity->getSyncRemove();
-                $parameters['parameters']['anime_db.my_anime_list_sync.sync.update'] = $entity->getSyncUpdate();
-                file_put_contents($file, Yaml::dump($parameters));
+                /* @var $parameters \AnimeDb\Bundle\AnimeDbBundle\Manipulator\Parameters */
+                $parameters = $this->get('anime_db.manipulator.parameters');
+                $parameters->set('anime_db.my_anime_list_sync.user.name', $entity->getUserName());
+                $parameters->set('anime_db.my_anime_list_sync.user.password', $entity->getUserPassword());
+                $parameters->set('anime_db.my_anime_list_sync.sync.insert', $entity->getSyncInsert());
+                $parameters->set('anime_db.my_anime_list_sync.sync.remove', $entity->getSyncRemove());
+                $parameters->set('anime_db.my_anime_list_sync.sync.update', $entity->getSyncUpdate());
 
                 // clear cache
                 $this->get('anime_db.cache_clearer')->clear();
