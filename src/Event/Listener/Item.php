@@ -237,7 +237,7 @@ class Item
                 ));
 
             } elseif ($id = $this->getId($entity, $em)) {
-                $this->sendRequest('add', $mal_item->getId(), $this->templating->render(
+                $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
                 ));
