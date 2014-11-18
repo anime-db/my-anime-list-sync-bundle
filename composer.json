@@ -10,6 +10,11 @@
 			"AnimeDb\\Bundle\\MyAnimeListSyncBundle\\" : "src/"
 		}
 	},
+	"autoload-dev" : {
+		"psr-4" : {
+			"AnimeDb\\Bundle\\MyAnimeListSyncBundle\\Tests\\" : "tests/"
+		}
+	},
 	"require" : {
 		"php" : ">=5.4.0",
 		"anime-db/catalog-bundle" : "dev-develop"
