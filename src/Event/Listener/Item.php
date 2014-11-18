@@ -128,22 +128,20 @@ class Item
      */
     public function postRemove(LifecycleEventArgs $args)
     {
-        $entity = $args->getEntity();
-        $em = $args->getEntityManager();
-        if ($entity instanceof ItemCatalog && $this->sync_remove) {
-            if ($id = $this->getId($entity, $em)) {
+        if ($args->getEntity() instanceof ItemCatalog && $this->sync_remove) {
+            if ($id = $this->getId($args)) {
                 $this->sendRequest('delete', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $entity]
+                    ['item' => $args->getEntity()]
                 ));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_delete.html.twig',
-                    ['item' => $entity]
+                    ['item' => $args->getEntity()]
                 ));
-                $em->persist($notice);
-                $em->flush();
+                $args->getEntityManager()->persist($notice);
+                $args->getEntityManager()->flush();
             }
         }
     }
@@ -155,9 +153,8 @@ class Item
      */
     public function prePersist(LifecycleEventArgs $args)
     {
-        $entity = $args->getEntity();
-        if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            $this->addSource($entity, $args->getEntityManager());
+        if ($args->getEntity() instanceof ItemCatalog && $this->sync_insert) {
+            $this->addSource($args);
         }
     }
 
@@ -168,22 +165,20 @@ class Item
      */
     public function postPersist(LifecycleEventArgs $args)
     {
-        $entity = $args->getEntity();
-        $em = $args->getEntityManager();
-        if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            if ($id = $this->getId($entity, $em)) {
+        if ($args->getEntity() instanceof ItemCatalog && $this->sync_insert) {
+            if ($id = $this->getId($args)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $entity]
+                    ['item' => $args->getEntity()]
                 ));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_insert.html.twig',
-                    ['item' => $entity]
+                    ['item' => $args->getEntity()]
                 ));
-                $em->persist($notice);
-                $em->flush();
+                $args->getEntityManager()->persist($notice);
+                $args->getEntityManager()->flush();
             }
         }
     }
@@ -195,26 +190,24 @@ class Item
      */
     public function preUpdate(LifecycleEventArgs $args)
     {
-        $entity = $args->getEntity();
-        if ($entity instanceof ItemCatalog && $this->sync_update) {
-            $this->addSource($entity, $args->getEntityManager());
+        if ($args->getEntity() instanceof ItemCatalog && $this->sync_update) {
+            $this->addSource($args);
         }
     }
 
     /**
-     * 
-     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
-     * @param \Doctrine\ORM\EntityManager $em
+     * Add source
+     *
+     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      */
-    protected function addSource(ItemCatalog $item, EntityManager $em)
+    protected function addSource(LifecycleEventArgs $args)
     {
-        if (!$this->getId($item, $em) && ($id = $this->findIdForItem($item))) {
-            $source = new Source();
-            $source->setUrl(self::HOST.'anime/'.$id.'/');
-            $item->addSource($source);
+        if (!$this->getId($args) && ($id = $this->findIdForItem($args->getEntity()))) {
+            $source = (new Source())->setUrl(self::HOST.'anime/'.$id.'/');
+            $args->getEntity()->addSource($source);
 
-            $em->persist($source);
-            $em->flush();
+            $args->getEntityManager()->persist($source);
+            $args->getEntityManager()->flush();
         }
     }
 
@@ -236,7 +229,7 @@ class Item
                     ['item' => $entity]
                 ));
 
-            } elseif ($id = $this->getId($entity, $em)) {
+            } elseif ($id = $this->getId($args)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -257,16 +250,15 @@ class Item
     /**
      * Get MyAnimeList id for item
      *
-     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
-     * @param \Doctrine\ORM\EntityManager $em
+     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
      *
      * @return integer|null
      */
-    protected function getId(ItemCatalog $item, EntityManager $em)
+    protected function getId(LifecycleEventArgs $args)
     {
         // search in sources
         /* @var $source \AnimeDb\Bundle\CatalogBundle\Entity\Source */
-        foreach ($item->getSources() as $source) {
+        foreach ($args->getEntity()->getSources() as $source) {
             if (strpos($source->getUrl(), self::HOST) === 0) {
                 if (preg_match('#/(\d+)/#', $source->getUrl(), $mat)) {
                     return $mat[1];
@@ -277,7 +269,8 @@ class Item
 
         // get MyAnimeList item link
         /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
-        $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($item->getId());
+        $mal_item = $args->getEntityManager()->getRepository('AnimeDbMyAnimeListSyncBundle:Item')
+            ->findByItem($args->getEntity()->getId());
         if ($mal_item instanceof ItemMal) {
             return $mal_item->getId();
         }
