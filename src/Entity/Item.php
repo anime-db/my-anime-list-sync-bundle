@@ -54,7 +54,7 @@ class Item
      *
      * @param integer $id
      *
-     * @return \AnimeDb\Bundle\MyAnimeListItem\Entity\Item
+     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item
      */
     public function setId($id)
     {
@@ -77,7 +77,7 @@ class Item
      *
      * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
      *
-     * @return \AnimeDb\Bundle\MyAnimeListItem\Entity\Item
+     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item
      */
     public function setItem(CatalogItem $item)
     {
