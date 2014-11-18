@@ -17,7 +17,6 @@ use Guzzle\Http\Client;
 use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
 use Guzzle\Http\Exception\BadResponseException;
-use Doctrine\ORM\EntityManager;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 
 /**
