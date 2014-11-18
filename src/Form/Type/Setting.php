@@ -8,7 +8,7 @@
  * @license   http://opensource.org/licenses/GPL-3.0 GPL v3
  */
 
-namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Form;
+namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -16,7 +16,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 /**
  * Plugin settings form
  *
- * @package AnimeDb\Bundle\MyAnimeListSyncBundle\Form
+ * @package AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type
  * @author  Peter Gribanov <info@peter-gribanov.ru>
  */
 class Setting extends AbstractType

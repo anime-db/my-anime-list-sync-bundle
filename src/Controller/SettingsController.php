@@ -13,7 +13,7 @@ namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting as SettingEntity;
-use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Setting as SettingForm;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type\Setting as SettingForm;
 use Symfony\Component\Yaml\Yaml;
 
 /**
