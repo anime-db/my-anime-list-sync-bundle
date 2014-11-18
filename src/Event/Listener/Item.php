@@ -350,6 +350,6 @@ class Item
                 ->setHeader('User-Agent', 'api-team-'.self::API_KEY)
                 ->setAuth($this->user_name, $this->user_password)
                 ->send();
-        } catch (BadResponseException $e) {}
+        } catch (BadResponseException $e) {} // is not a critical error
     }
 }
