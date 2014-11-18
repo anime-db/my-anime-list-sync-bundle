@@ -6,8 +6,8 @@
 	"homepage" : "http://github.com/anime-db/my-anime-list-sync-bundle",
 	"version" : "0.1.2",
 	"autoload" : {
-		"psr-0" : {
-			"AnimeDb\\Bundle\\MyAnimeListSyncBundle" : "src/"
+		"psr-4" : {
+			"AnimeDb\\Bundle\\MyAnimeListSyncBundle\\" : "src/"
 		}
 	},
 	"require" : {
