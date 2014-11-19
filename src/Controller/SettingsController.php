@@ -43,13 +43,13 @@ class SettingsController extends Controller
         $form = $this->createForm(new SettingForm(), $entity)->handleRequest($request);
         if ($form->isValid()) {
             // update params
-            /* @var $parameters \AnimeDb\Bundle\AnimeDbBundle\Manipulator\Parameters */
-            $parameters = $this->get('anime_db.manipulator.parameters');
-            $parameters->set('anime_db.my_anime_list_sync.user.name', $entity->getUserName());
-            $parameters->set('anime_db.my_anime_list_sync.user.password', $entity->getUserPassword());
-            $parameters->set('anime_db.my_anime_list_sync.sync.insert', $entity->getSyncInsert());
-            $parameters->set('anime_db.my_anime_list_sync.sync.remove', $entity->getSyncRemove());
-            $parameters->set('anime_db.my_anime_list_sync.sync.update', $entity->getSyncUpdate());
+            $this->get('anime_db.manipulator.parameters')->setList([
+                'anime_db.my_anime_list_sync.user.name' => $entity->getUserName(),
+                'anime_db.my_anime_list_sync.user.password' => $entity->getUserPassword(),
+                'anime_db.my_anime_list_sync.sync.insert' => $entity->getSyncInsert(),
+                'anime_db.my_anime_list_sync.sync.remove' => $entity->getSyncRemove(),
+                'anime_db.my_anime_list_sync.sync.update' => $entity->getSyncUpdate()
+            ]);
 
             // clear cache
             $this->get('anime_db.cache_clearer')->clear();
