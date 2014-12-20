@@ -1,0 +1,21 @@
+services:
+    anime_db.my_anime_list_sync.listener.item:
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener\Item
+        arguments:
+            - %anime_db.my_anime_list_sync.user.name%
+            - %anime_db.my_anime_list_sync.user.password%
+            - %anime_db.my_anime_list_sync.sync.remove%
+            - %anime_db.my_anime_list_sync.sync.insert%
+            - %anime_db.my_anime_list_sync.sync.update%
+            - @templating
+        tags:
+            - { name: doctrine.event_listener, event: postRemove }
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: preUpdate }
+            - { name: doctrine.event_listener, event: postUpdate }
+
+    anime_db.my_anime_list_sync.setting:
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Setting
+        tags:
+            -  { name: anime_db.setting }

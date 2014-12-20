@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="1">
+                <source><![CDATA[Failed to add <a href="%show%">%name%</a> in the database MyAnimeList. <a href="%add%">Add</a> a reference to external sources item to connect the item on MyAnimeList.]]></source>
+                <target><![CDATA[Не удалось выполнить добавление <a href="%show%">%name%</a> в базу MyAnimeList. <a href="%add%">Добавьте</a> ссылку  во внешние источники для связи с записью на MyAnimeList.]]></target>
+            </trans-unit>
+            <trans-unit id="2">
+                <source>Failed to delete "%name%" from the database MyAnimeList.</source>
+                <target>Не удалось выполнить удаление "%name%" из базы MyAnimeList.</target>
+            </trans-unit>
+            <trans-unit id="3">
+                <source><![CDATA[Failed to update <a href="%show%">%name%</a> in the database MyAnimeList. <a href="%add%">Add</a> a reference to external sources item to connect the item on MyAnimeList.]]></source>
+                <target><![CDATA[Не удалось выполнить обновление <a href="%show%">%name%</a> в базе MyAnimeList. <a href="%add%">Добавьте</a> ссылку  во внешние источники для связи с записью на MyAnimeList.]]></target>
+            </trans-unit>
+            <trans-unit id="4">
+                <source>MyAnimeList sync settings</source>
+                <target>MyAnimeList параметры синхронизации</target>
+            </trans-unit>
+            <trans-unit id="5">
+                <source>User name</source>
+                <target>Имя пользователя</target>
+            </trans-unit>
+            <trans-unit id="6">
+                <source>User password</source>
+                <target>Пароль пользователя</target>
+            </trans-unit>
+            <trans-unit id="7">
+                <source>Sync remove</source>
+                <target>Синхронизировать удаление</target>
+            </trans-unit>
+            <trans-unit id="8">
+                <source>Sync insert</source>
+                <target>Синхронизировать вставку</target>
+            </trans-unit>
+            <trans-unit id="9">
+                <source>Sync update</source>
+                <target>Синхронизировать обновление</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -1,3 +1,0 @@
-my_anime_list_sync_settings:
-    pattern:  /MyAnimeList/sync/settings.html
-    defaults: { _controller: AnimeDbMyAnimeListSyncBundle:Settings:index }
