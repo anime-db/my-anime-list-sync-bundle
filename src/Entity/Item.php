@@ -11,7 +11,6 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Annotations\Annotation\IgnoreAnnotation;
 use AnimeDb\Bundle\CatalogBundle\Entity\Item as CatalogItem;
 
 /**
@@ -19,10 +18,11 @@ use AnimeDb\Bundle\CatalogBundle\Entity\Item as CatalogItem;
  *
  * @ORM\Entity
  * @ORM\Table(
- *     name="my_anime_list_item",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="my_anime_list_item_idx", columns={"mal_item_id", "item_id"})}
+ *   name="my_anime_list_item",
+ *   uniqueConstraints={
+ *     @ORM\UniqueConstraint(name="my_anime_list_item_idx", columns={"mal_item_id", "item_id"})
+ *   }
  * )
- * @IgnoreAnnotation("ORM")
  *
  * @package AnimeDb\Bundle\MyAnimeListSyncBundle\Entity
  * @author  Peter Gribanov <info@peter-gribanov.ru>
@@ -30,31 +30,25 @@ use AnimeDb\Bundle\CatalogBundle\Entity\Item as CatalogItem;
 class Item
 {
     /**
-     * Id
-     *
      * @ORM\Id
      * @ORM\Column(type="integer", name="mal_item_id")
      *
-     * @var integer
+     * @var int
      */
     protected $id;
 
     /**
-     * Item
-     *
      * @ORM\OneToOne(targetEntity="AnimeDb\Bundle\CatalogBundle\Entity\Item")
      * @ORM\JoinColumn(name="item_id", referencedColumnName="id", nullable=false)
      *
-     * @var \AnimeDb\Bundle\CatalogBundle\Entity\Item
+     * @var CatalogItem
      */
     protected $item;
 
     /**
-     * Set id
+     * @param int $id
      *
-     * @param integer $id
-     *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item
+     * @return Item
      */
     public function setId($id)
     {
@@ -63,9 +57,7 @@ class Item
     }
 
     /**
-     * Get id
-     *
-     * @return integer
+     * @return int
      */
     public function getId()
     {
@@ -73,11 +65,9 @@ class Item
     }
 
     /**
-     * Set item
+     * @param CatalogItem $item
      *
-     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
-     *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item
+     * @return Item
      */
     public function setItem(CatalogItem $item)
     {
@@ -86,9 +76,7 @@ class Item
     }
 
     /**
-     * Get item
-     *
-     * @return \AnimeDb\Bundle\CatalogBundle\Entity\Item
+     * @return CatalogItem
      */
     public function getItem()
     {

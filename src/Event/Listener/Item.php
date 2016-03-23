@@ -10,13 +10,16 @@
 
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
+use AnimeDb\Bundle\CatalogBundle\Entity\Name;
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemCatalog;
-use Symfony\Component\Templating\EngineInterface;
+use Guzzle\Http\Message\Response;
 use Guzzle\Http\Client;
-use AnimeDb\Bundle\AppBundle\Entity\Notice;
-use AnimeDb\Bundle\CatalogBundle\Entity\Source;
 use Guzzle\Http\Exception\BadResponseException;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Templating\EngineInterface;
+use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemCatalog;
+use AnimeDb\Bundle\CatalogBundle\Entity\Source;
+use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 
 /**
@@ -28,36 +31,26 @@ use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 class Item
 {
     /**
-     * Host
-     *
      * @var string
      */
     const HOST = 'http://myanimelist.net/';
 
     /**
-     * Base API URL
-     *
      * @var string
      */
     const API_URL = 'http://myanimelist.net/api/';
 
     /**
-     * API key
-     *
      * @var string
      */
     const API_KEY = '8069EC4798E98A3BC14382D9DAA2498C';
 
     /**
-     * User name
-     *
      * @var string
      */
     private $user_name = '';
 
     /**
-     * User password
-     *
      * @var string
      */
     private $user_password = '';
@@ -65,40 +58,36 @@ class Item
     /**
      * Sync the delete operation
      *
-     * @var boolean
+     * @var bool
      */
     private $sync_remove = true;
 
     /**
      * Sync the insert operation
      *
-     * @var boolean
+     * @var bool
      */
     private $sync_insert = true;
 
     /**
      * Sync the update operation
      *
-     * @var boolean
+     * @var bool
      */
     private $sync_update = true;
 
     /**
-     * Templating
-     *
-     * @var \Symfony\Component\Templating\EngineInterface
+     * @var EngineInterface
      */
     private $templating;
 
     /**
-     * Construct
-     *
      * @param string $user_name
      * @param string $user_password
-     * @param boolean $sync_remove
-     * @param boolean $sync_insert
-     * @param boolean $sync_update
-     * @param \Symfony\Component\Templating\EngineInterface $templating
+     * @param bool $sync_remove
+     * @param bool $sync_insert
+     * @param bool $sync_update
+     * @param EngineInterface $templating
      */
     public function __construct(
         $user_name,
@@ -110,6 +99,7 @@ class Item
     ) {
         $this->user_name = $user_name;
         $this->user_password = $user_password;
+
         if ($this->user_name) {
             $this->sync_remove = $sync_remove;
             $this->sync_insert = $sync_insert;
@@ -117,13 +107,12 @@ class Item
         } else {
             $this->sync_remove = $this->sync_insert = $this->sync_update = false;
         }
+
         $this->templating = $templating;
     }
 
     /**
-     * Post remove
-     *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     public function postRemove(LifecycleEventArgs $args)
     {
@@ -148,7 +137,7 @@ class Item
     /**
      * Pre persist add item source if not exists
      *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     public function prePersist(LifecycleEventArgs $args)
     {
@@ -158,9 +147,7 @@ class Item
     }
 
     /**
-     * Post persist
-     *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     public function postPersist(LifecycleEventArgs $args)
     {
@@ -185,7 +172,7 @@ class Item
     /**
      * Pre update add item source if not exists
      *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     public function preUpdate(LifecycleEventArgs $args)
     {
@@ -195,9 +182,7 @@ class Item
     }
 
     /**
-     * Add source
-     *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     protected function addSource(LifecycleEventArgs $args)
     {
@@ -211,9 +196,7 @@ class Item
     }
 
     /**
-     * Post update
-     *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      */
     public function postUpdate(LifecycleEventArgs $args)
     {
@@ -249,14 +232,14 @@ class Item
     /**
      * Get MyAnimeList id for item
      *
-     * @param \Doctrine\ORM\Event\LifecycleEventArgs $args
+     * @param LifecycleEventArgs $args
      *
-     * @return integer
+     * @return int
      */
     protected function getId(LifecycleEventArgs $args)
     {
         // search in sources
-        /* @var $source \AnimeDb\Bundle\CatalogBundle\Entity\Source */
+        /* @var $source Source */
         foreach ($args->getEntity()->getSources() as $source) {
             if (strpos($source->getUrl(), self::HOST) === 0) {
                 if (preg_match('#/(\d+)/#', $source->getUrl(), $mat)) {
@@ -267,7 +250,7 @@ class Item
         }
 
         // get MyAnimeList item link
-        /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
+        /* @var $mal_item Item */
         $mal_item = $args->getEntityManager()->getRepository('AnimeDbMyAnimeListSyncBundle:Item')
             ->findByItem($args->getEntity()->getId());
         if ($mal_item instanceof ItemMal) {
@@ -280,9 +263,9 @@ class Item
     /**
      * Try to find the MyAnimeList id for the item
      *
-     * @param \AnimeDb\Bundle\CatalogBundle\Entity\Item $item
+     * @param ItemCatalog $item
      *
-     * @return integer|null
+     * @return int|null
      */
     protected function findIdForItem(ItemCatalog $item)
     {
@@ -291,7 +274,7 @@ class Item
         if (preg_match('/[a-z]+/i', $item->getName())) {
             $query = $item->getName();
         } else {
-            /* @var $name \AnimeDb\Bundle\CatalogBundle\Entity\Name */
+            /* @var $name Name */
             foreach ($item->getNames() as $name) {
                 if (preg_match('/[a-z]+/i', $name->getName())) {
                     $query = $name->getName();
@@ -303,7 +286,7 @@ class Item
         // try search
         if ($query) {
             $client = new Client(self::API_URL);
-            /* @var $request \Guzzle\Http\Message\Request */
+            /* @var $request Request */
             $request = $client->get('anime/search.xml')
                 ->setAuth($this->user_name, $this->user_password);
             $request->getQuery()->set('q', $query);
@@ -330,13 +313,11 @@ class Item
     }
 
     /**
-     * Send request
-     *
      * @param string $action add|update|delete
      * @param integer $id
      * @param string|null $data
      *
-     * @return \Guzzle\Http\Message\Response|null
+     * @return Response|null
      */
     protected function sendRequest($action, $id, $data = null)
     {
@@ -350,6 +331,10 @@ class Item
                 ->setHeader('User-Agent', 'api-team-'.self::API_KEY)
                 ->setAuth($this->user_name, $this->user_password)
                 ->send();
-        } catch (BadResponseException $e) {} // is not a critical error
+        } catch (BadResponseException $e) {
+            // is not a critical error
+        }
+
+        return null;
     }
 }
