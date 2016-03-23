@@ -2,12 +2,13 @@ services:
     anime_db.my_anime_list_sync.listener.item:
         class: AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener\Item
         arguments:
+            - '@templating'
+            - '@doctrine.orm.entity_manager'
             - '%anime_db.my_anime_list_sync.user.name%'
             - '%anime_db.my_anime_list_sync.user.password%'
             - '%anime_db.my_anime_list_sync.sync.remove%'
             - '%anime_db.my_anime_list_sync.sync.insert%'
             - '%anime_db.my_anime_list_sync.sync.update%'
-            - '@templating'
         tags:
             - { name: doctrine.event_listener, event: postRemove }
             - { name: doctrine.event_listener, event: prePersist }

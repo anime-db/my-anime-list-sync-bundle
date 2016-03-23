@@ -11,7 +11,8 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
 use AnimeDb\Bundle\CatalogBundle\Entity\Name;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Common\Persistence\ObjectRepository;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Guzzle\Http\Message\Response;
 use Guzzle\Http\Message\Request;
@@ -32,6 +33,52 @@ use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 class Item
 {
     /**
+     * @var EngineInterface
+     */
+    protected $templating;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
+
+    /**
+     * @var ObjectRepository
+     */
+    protected $rep;
+
+    /**
+     * @var string
+     */
+    protected $user_name = '';
+
+    /**
+     * @var string
+     */
+    protected $user_password = '';
+
+    /**
+     * Sync the delete operation
+     *
+     * @var bool
+     */
+    protected $sync_remove = true;
+
+    /**
+     * Sync the insert operation
+     *
+     * @var bool
+     */
+    protected $sync_insert = true;
+
+    /**
+     * Sync the update operation
+     *
+     * @var bool
+     */
+    protected $sync_update = true;
+
+    /**
      * @var string
      */
     const HOST = 'http://myanimelist.net/';
@@ -47,57 +94,26 @@ class Item
     const API_KEY = '8069EC4798E98A3BC14382D9DAA2498C';
 
     /**
-     * @var string
-     */
-    private $user_name = '';
-
-    /**
-     * @var string
-     */
-    private $user_password = '';
-
-    /**
-     * Sync the delete operation
-     *
-     * @var bool
-     */
-    private $sync_remove = true;
-
-    /**
-     * Sync the insert operation
-     *
-     * @var bool
-     */
-    private $sync_insert = true;
-
-    /**
-     * Sync the update operation
-     *
-     * @var bool
-     */
-    private $sync_update = true;
-
-    /**
-     * @var EngineInterface
-     */
-    private $templating;
-
-    /**
+     * @param EngineInterface $templating
+     * @param EntityManagerInterface $em
      * @param string $user_name
      * @param string $user_password
      * @param bool $sync_remove
      * @param bool $sync_insert
      * @param bool $sync_update
-     * @param EngineInterface $templating
      */
     public function __construct(
+        EngineInterface $templating,
+        EntityManagerInterface $em,
         $user_name,
         $user_password,
         $sync_remove,
         $sync_insert,
-        $sync_update,
-        EngineInterface $templating
+        $sync_update
     ) {
+        $this->em = $em;
+        $this->rep = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item');
+        $this->templating = $templating;
         $this->user_name = $user_name;
         $this->user_password = $user_password;
 
@@ -108,8 +124,6 @@ class Item
         } else {
             $this->sync_remove = $this->sync_insert = $this->sync_update = false;
         }
-
-        $this->templating = $templating;
     }
 
     /**
@@ -119,7 +133,7 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_remove) {
-            if ($id = $this->getId($entity, $args->getEntityManager())) {
+            if ($id = $this->getId($entity)) {
                 $this->sendRequest('delete', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $args->getEntity()]
@@ -130,8 +144,8 @@ class Item
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_delete.html.twig',
                     ['item' => $args->getEntity()]
                 ));
-                $args->getEntityManager()->persist($notice);
-                $args->getEntityManager()->flush();
+                $this->em->persist($notice);
+                $this->em->flush();
             }
         }
     }
@@ -145,7 +159,7 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            $this->addSource($entity, $args->getEntityManager());
+            $this->addSource($entity);
         }
     }
 
@@ -156,7 +170,7 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            if ($id = $this->getId($entity, $args->getEntityManager())) {
+            if ($id = $this->getId($entity)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $args->getEntity()]
@@ -167,8 +181,8 @@ class Item
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_insert.html.twig',
                     ['item' => $args->getEntity()]
                 ));
-                $args->getEntityManager()->persist($notice);
-                $args->getEntityManager()->flush();
+                $this->em->persist($notice);
+                $this->em->flush();
             }
         }
     }
@@ -182,22 +196,21 @@ class Item
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_update) {
-            $this->addSource($entity, $args->getEntityManager());
+            $this->addSource($entity);
         }
     }
 
     /**
      * @param ItemCatalog $entity
-     * @param EntityManager $em
      */
-    protected function addSource(ItemCatalog $entity, EntityManager $em)
+    protected function addSource(ItemCatalog $entity)
     {
-        if (!$this->getId($entity, $em) && ($id = $this->findIdForItem($entity))) {
+        if (!$this->getId($entity) && ($id = $this->findIdForItem($entity))) {
             $source = (new Source())->setUrl(self::HOST.'anime/'.$id.'/');
             $entity->addSource($source);
 
-            $em->persist($source);
-            $em->flush();
+            $this->em->persist($source);
+            $this->em->flush();
         }
     }
 
@@ -207,17 +220,17 @@ class Item
     public function postUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        $em = $args->getEntityManager();
         if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
             /* @var $mal_item ItemCatalog */
-            $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($entity->getId());
+            $mal_item = $this->rep->findByItem($entity->getId());
+
             if ($mal_item instanceof ItemMal) {
                 $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
                 ));
 
-            } elseif ($id = $this->getId($entity, $em)) {
+            } elseif ($id = $this->getId($entity)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -229,8 +242,8 @@ class Item
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_update.html.twig',
                     ['item' => $entity]
                 ));
-                $em->persist($notice);
-                $em->flush();
+                $this->em->persist($notice);
+                $this->em->flush();
             }
         }
     }
@@ -239,11 +252,10 @@ class Item
      * Get MyAnimeList id for item
      *
      * @param ItemCatalog $entity
-     * @param EntityManager $em
      *
      * @return int
      */
-    protected function getId(ItemCatalog $entity, EntityManager $em)
+    protected function getId(ItemCatalog $entity)
     {
         // search in sources
         /* @var $source Source */
@@ -257,9 +269,7 @@ class Item
         }
 
         // get MyAnimeList item link
-        $mal_item = $em
-            ->getRepository('AnimeDbMyAnimeListSyncBundle:Item')
-            ->findByItem($entity->getId());
+        $mal_item = $this->rep->findByItem($entity->getId());
 
         if ($mal_item instanceof ItemMal) {
             return $mal_item->getId();
@@ -338,8 +348,7 @@ class Item
             return $request->send();
         } catch (BadResponseException $e) {
             // is not a critical error
+            return null;
         }
-
-        return null;
     }
 }
