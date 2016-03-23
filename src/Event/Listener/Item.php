@@ -12,7 +12,7 @@ namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
 use AnimeDb\Bundle\CatalogBundle\Entity\Name;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Common\Persistence\ObjectRepository;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Repository\ItemRepository;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Guzzle\Http\Message\Response;
 use Guzzle\Http\Message\Request;
@@ -43,7 +43,7 @@ class Item
     protected $em;
 
     /**
-     * @var ObjectRepository
+     * @var ItemRepository
      */
     protected $rep;
 
@@ -222,7 +222,7 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
             /* @var $mal_item ItemCatalog */
-            $mal_item = $this->rep->findByItem($entity->getId());
+            $mal_item = $this->rep->findByCatalogItem($entity);
 
             if ($mal_item instanceof ItemMal) {
                 $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
@@ -269,7 +269,7 @@ class Item
         }
 
         // get MyAnimeList item link
-        $mal_item = $this->rep->findByItem($entity->getId());
+        $mal_item = $this->rep->findByCatalogItem($entity);
 
         if ($mal_item instanceof ItemMal) {
             return $mal_item->getId();

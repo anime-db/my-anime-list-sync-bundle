@@ -16,7 +16,7 @@ use AnimeDb\Bundle\CatalogBundle\Entity\Item as CatalogItem;
 /**
  * Items in MyAnimeList
  *
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="AnimeDb\Bundle\MyAnimeListSyncBundle\Repository\ItemRepository")
  * @ORM\Table(
  *   name="my_anime_list_item",
  *   uniqueConstraints={
