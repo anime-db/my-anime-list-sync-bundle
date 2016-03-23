@@ -42,6 +42,7 @@ class SettingsController extends Controller
 
         /* @var $form Form */
         $form = $this->createForm(new SettingForm(), $entity)->handleRequest($request);
+
         if ($form->isValid()) {
             // update params
             /* @var $manipulator Parameters */
