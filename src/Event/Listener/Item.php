@@ -134,15 +134,12 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_remove) {
             if ($id = $this->getId($entity)) {
-                $this->sendRequest('delete', $id, $this->templating->render(
-                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $args->getEntity()]
-                ));
+                $this->sendRequest('delete', $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_delete.html.twig',
-                    ['item' => $args->getEntity()]
+                    ['item' => $entity]
                 ));
                 $this->em->persist($notice);
                 $this->em->flush();
@@ -171,15 +168,12 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
             if ($id = $this->getId($entity)) {
-                $this->sendRequest('add', $id, $this->templating->render(
-                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $args->getEntity()]
-                ));
+                $this->sendRequest('add', $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_insert.html.twig',
-                    ['item' => $args->getEntity()]
+                    ['item' => $entity]
                 ));
                 $this->em->persist($notice);
                 $this->em->flush();
@@ -225,16 +219,10 @@ class Item
             $mal_item = $this->rep->findByCatalogItem($entity);
 
             if ($mal_item instanceof ItemMal) {
-                $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
-                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $entity]
-                ));
+                $this->sendRequest('update', $mal_item->getId(), $this->renderEntry($entity));
 
             } elseif ($id = $this->getId($entity)) {
-                $this->sendRequest('add', $id, $this->templating->render(
-                    'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
-                    ['item' => $entity]
-                ));
+                $this->sendRequest('add', $id, $this->renderEntry($entity));
 
             } else {
                 $notice = new Notice();
@@ -350,5 +338,18 @@ class Item
             // is not a critical error
             return null;
         }
+    }
+
+    /**
+     * @param ItemCatalog $entity
+     *
+     * @return string
+     */
+    protected function renderEntry(ItemCatalog $entity)
+    {
+        return $this->templating->render(
+            'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
+            ['item' => $entity]
+        );
     }
 }
