@@ -11,11 +11,12 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
 use AnimeDb\Bundle\CatalogBundle\Entity\Name;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Guzzle\Http\Message\Response;
+use Guzzle\Http\Message\Request;
 use Guzzle\Http\Client;
 use Guzzle\Http\Exception\BadResponseException;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Templating\EngineInterface;
 use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemCatalog;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
@@ -116,8 +117,9 @@ class Item
      */
     public function postRemove(LifecycleEventArgs $args)
     {
-        if ($args->getEntity() instanceof ItemCatalog && $this->sync_remove) {
-            if ($id = $this->getId($args)) {
+        $entity = $args->getEntity();
+        if ($entity instanceof ItemCatalog && $this->sync_remove) {
+            if ($id = $this->getId($entity, $args->getEntityManager())) {
                 $this->sendRequest('delete', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $args->getEntity()]
@@ -141,8 +143,9 @@ class Item
      */
     public function prePersist(LifecycleEventArgs $args)
     {
-        if ($args->getEntity() instanceof ItemCatalog && $this->sync_insert) {
-            $this->addSource($args);
+        $entity = $args->getEntity();
+        if ($entity instanceof ItemCatalog && $this->sync_insert) {
+            $this->addSource($entity, $args->getEntityManager());
         }
     }
 
@@ -151,8 +154,9 @@ class Item
      */
     public function postPersist(LifecycleEventArgs $args)
     {
-        if ($args->getEntity() instanceof ItemCatalog && $this->sync_insert) {
-            if ($id = $this->getId($args)) {
+        $entity = $args->getEntity();
+        if ($entity instanceof ItemCatalog && $this->sync_insert) {
+            if ($id = $this->getId($entity, $args->getEntityManager())) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $args->getEntity()]
@@ -176,22 +180,24 @@ class Item
      */
     public function preUpdate(LifecycleEventArgs $args)
     {
-        if ($args->getEntity() instanceof ItemCatalog && $this->sync_update) {
-            $this->addSource($args);
+        $entity = $args->getEntity();
+        if ($entity instanceof ItemCatalog && $this->sync_update) {
+            $this->addSource($entity, $args->getEntityManager());
         }
     }
 
     /**
-     * @param LifecycleEventArgs $args
+     * @param ItemCatalog $entity
+     * @param EntityManager $em
      */
-    protected function addSource(LifecycleEventArgs $args)
+    protected function addSource(ItemCatalog $entity, EntityManager $em)
     {
-        if (!$this->getId($args) && ($id = $this->findIdForItem($args->getEntity()))) {
+        if (!$this->getId($entity, $em) && ($id = $this->findIdForItem($entity))) {
             $source = (new Source())->setUrl(self::HOST.'anime/'.$id.'/');
-            $args->getEntity()->addSource($source);
+            $entity->addSource($source);
 
-            $args->getEntityManager()->persist($source);
-            $args->getEntityManager()->flush();
+            $em->persist($source);
+            $em->flush();
         }
     }
 
@@ -203,7 +209,7 @@ class Item
         $entity = $args->getEntity();
         $em = $args->getEntityManager();
         if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
-            /* @var $mal_item \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item */
+            /* @var $mal_item ItemCatalog */
             $mal_item = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item')->findByItem($entity->getId());
             if ($mal_item instanceof ItemMal) {
                 $this->sendRequest('update', $mal_item->getId(), $this->templating->render(
@@ -211,7 +217,7 @@ class Item
                     ['item' => $entity]
                 ));
 
-            } elseif ($id = $this->getId($args)) {
+            } elseif ($id = $this->getId($entity, $em)) {
                 $this->sendRequest('add', $id, $this->templating->render(
                     'AnimeDbMyAnimeListSyncBundle::entry.xml.twig',
                     ['item' => $entity]
@@ -232,15 +238,16 @@ class Item
     /**
      * Get MyAnimeList id for item
      *
-     * @param LifecycleEventArgs $args
+     * @param ItemCatalog $entity
+     * @param EntityManager $em
      *
      * @return int
      */
-    protected function getId(LifecycleEventArgs $args)
+    protected function getId(ItemCatalog $entity, EntityManager $em)
     {
         // search in sources
         /* @var $source Source */
-        foreach ($args->getEntity()->getSources() as $source) {
+        foreach ($entity->getSources() as $source) {
             if (strpos($source->getUrl(), self::HOST) === 0) {
                 if (preg_match('#/(\d+)/#', $source->getUrl(), $mat)) {
                     return $mat[1];
@@ -250,9 +257,10 @@ class Item
         }
 
         // get MyAnimeList item link
-        /* @var $mal_item Item */
-        $mal_item = $args->getEntityManager()->getRepository('AnimeDbMyAnimeListSyncBundle:Item')
-            ->findByItem($args->getEntity()->getId());
+        $mal_item = $em
+            ->getRepository('AnimeDbMyAnimeListSyncBundle:Item')
+            ->findByItem($entity->getId());
+
         if ($mal_item instanceof ItemMal) {
             return $mal_item->getId();
         }
@@ -287,9 +295,10 @@ class Item
         if ($query) {
             $client = new Client(self::API_URL);
             /* @var $request Request */
-            $request = $client->get('anime/search.xml')
-                ->setAuth($this->user_name, $this->user_password);
+            $request = $client->get('anime/search.xml');
+            $request->setAuth($this->user_name, $this->user_password);
             $request->getQuery()->set('q', $query);
+
             try {
                 $data = $request->send()->getBody(true);
             } catch (BadResponseException $e) {
@@ -323,14 +332,10 @@ class Item
     {
         $client = new Client(self::API_URL);
         try {
-            return $client->post(
-                    'animelist/'.$action.'/'.$id.'.xml',
-                    null,
-                    $data ? ['data' => $data] : []
-                )
-                ->setHeader('User-Agent', 'api-team-'.self::API_KEY)
-                ->setAuth($this->user_name, $this->user_password)
-                ->send();
+            $request = $client->post('animelist/'.$action.'/'.$id.'.xml', null, $data ? ['data' => $data] : []);
+            $request->setAuth($this->user_name, $this->user_password);
+            $request->setHeader('User-Agent', 'api-team-'.self::API_KEY);
+            return $request->send();
         } catch (BadResponseException $e) {
             // is not a critical error
         }
