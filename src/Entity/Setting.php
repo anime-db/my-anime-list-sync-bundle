@@ -11,7 +11,7 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Entity;
 
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\ExecutionContextInterface;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Plugin settings
@@ -23,43 +23,33 @@ use Symfony\Component\Validator\ExecutionContextInterface;
 class Setting
 {
     /**
-     * User name
-     *
      * @var string
      */
     protected $user_name;
 
     /**
-     * User password
-     *
      * @var string
      */
     protected $user_password;
 
     /**
-     * Sync remove
-     *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var boolean
+     * @var bool
      */
     protected $sync_remove = true;
 
     /**
-     * Sync insert
-     *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var boolean
+     * @var bool
      */
     protected $sync_insert = true;
 
     /**
-     * Sync update
-     *
      * @Assert\Type(type="bool", message="The value {{ value }} is not a valid {{ type }}.")
      *
-     * @var boolean
+     * @var bool
      */
     protected $sync_update = true;
 
@@ -74,11 +64,9 @@ class Setting
     }
 
     /**
-     * Set user name
-     *
      * @param string $user_name
      *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     * @return Setting
      */
     public function setUserName($user_name)
     {
@@ -87,8 +75,6 @@ class Setting
     }
 
     /**
-     * Get user password
-     * 
      * @return string
      */
     public function getUserPassword()
@@ -97,11 +83,9 @@ class Setting
     }
 
     /**
-     * Set user password
-     *
      * @param string $user_password
      *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     * @return Setting
      */
     public function setUserPassword($user_password)
     {
@@ -110,9 +94,7 @@ class Setting
     }
 
     /**
-     * Get sync remove
-     * 
-     * @return boolean
+     * @return bool
      */
     public function getSyncRemove()
     {
@@ -120,11 +102,9 @@ class Setting
     }
 
     /**
-     * Set sync remove
+     * @param bool $sync_remove
      *
-     * @param boolean $sync_remove
-     *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     * @return Setting
      */
     public function setSyncRemove($sync_remove)
     {
@@ -133,9 +113,7 @@ class Setting
     }
 
     /**
-     * Get sync insert
-     * 
-     * @return boolean
+     * @return bool
      */
     public function getSyncInsert()
     {
@@ -143,11 +121,9 @@ class Setting
     }
 
     /**
-     * Set sync insert
+     * @param bool $sync_insert
      *
-     * @param boolean $sync_insert
-     *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     * @return Setting
      */
     public function setSyncInsert($sync_insert)
     {
@@ -156,9 +132,7 @@ class Setting
     }
 
     /**
-     * Get sync update
-     * 
-     * @return boolean
+     * @return bool
      */
     public function getSyncUpdate()
     {
@@ -166,11 +140,9 @@ class Setting
     }
 
     /**
-     * Set sync update
+     * @param bool $sync_update
      *
-     * @param boolean $sync_update
-     *
-     * @return \AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting
+     * @return Setting
      */
     public function setSyncUpdate($sync_update)
     {
@@ -179,14 +151,15 @@ class Setting
     }
 
     /**
-     * Is password not empty if name is set
-     *
-     * @param \Symfony\Component\Validator\ExecutionContextInterface $context
+     * @param ExecutionContextInterface $context
      */
     public function isPasswordNotEmpty(ExecutionContextInterface $context)
     {
         if ($this->getUserName() && !$this->getUserPassword()) {
-            $context->addViolationAt('user_password', 'Password is required to fill if the username is specified');
+            $context
+                ->buildViolation('Password is required to fill if the username is specified')
+                ->atPath('user_password')
+                ->addViolation();
         }
     }
 }

@@ -12,8 +12,11 @@ namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Setting as SettingEntity;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type\Setting as SettingForm;
+use AnimeDb\Bundle\AnimeDbBundle\Manipulator\Parameters;
+use Symfony\Component\Form\Form;
 
 /**
  * Settings
@@ -24,11 +27,9 @@ use AnimeDb\Bundle\MyAnimeListSyncBundle\Form\Type\Setting as SettingForm;
 class SettingsController extends Controller
 {
     /**
-     * Main page
+     * @param Request $request
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return Response
      */
     public function indexAction(Request $request)
     {
@@ -39,11 +40,14 @@ class SettingsController extends Controller
             ->setSyncRemove($this->container->getParameter('anime_db.my_anime_list_sync.sync.remove'))
             ->setSyncUpdate($this->container->getParameter('anime_db.my_anime_list_sync.sync.update'));
 
-        /* @var $form \Symfony\Component\Form\Form */
+        /* @var $form Form */
         $form = $this->createForm(new SettingForm(), $entity)->handleRequest($request);
+
         if ($form->isValid()) {
             // update params
-            $this->get('anime_db.manipulator.parameters')->setList([
+            /* @var $manipulator Parameters */
+            $manipulator = $this->get('anime_db.manipulator.parameters');
+            $manipulator->setParameters([
                 'anime_db.my_anime_list_sync.user.name' => $entity->getUserName(),
                 'anime_db.my_anime_list_sync.user.password' => $entity->getUserPassword(),
                 'anime_db.my_anime_list_sync.sync.insert' => $entity->getSyncInsert(),

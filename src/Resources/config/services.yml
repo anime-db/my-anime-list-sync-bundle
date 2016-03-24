@@ -1,13 +1,15 @@
 services:
     anime_db.my_anime_list_sync.listener.item:
-        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener\Item
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener\ItemChangesListener
         arguments:
-            - %anime_db.my_anime_list_sync.user.name%
-            - %anime_db.my_anime_list_sync.user.password%
-            - %anime_db.my_anime_list_sync.sync.remove%
-            - %anime_db.my_anime_list_sync.sync.insert%
-            - %anime_db.my_anime_list_sync.sync.update%
-            - @templating
+            - '@templating'
+            - '@doctrine.orm.entity_manager'
+            - '@anime_db.my_anime_list_sync.client'
+            - '%anime_db.my_anime_list_sync.host%'
+            - '%anime_db.my_anime_list_sync.user.name%'
+            - '%anime_db.my_anime_list_sync.sync.remove%'
+            - '%anime_db.my_anime_list_sync.sync.insert%'
+            - '%anime_db.my_anime_list_sync.sync.update%'
         tags:
             - { name: doctrine.event_listener, event: postRemove }
             - { name: doctrine.event_listener, event: prePersist }
@@ -19,3 +21,17 @@ services:
         class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Setting
         tags:
             -  { name: anime_db.setting }
+
+    anime_db.my_anime_list_sync.client:
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Client
+        public: false
+        arguments:
+            - '@anime_db.my_anime_list_sync.guzzle_client'
+            - '%anime_db.my_anime_list_sync.api.key%'
+            - '%anime_db.my_anime_list_sync.user.name%'
+            - '%anime_db.my_anime_list_sync.user.password%'
+
+    anime_db.my_anime_list_sync.guzzle_client:
+        class: Guzzle\Http\Client
+        public: false
+        arguments: [ '%anime_db.my_anime_list_sync.api.host%' ]

@@ -22,8 +22,6 @@ use Knp\Menu\ItemInterface;
 class Setting extends SettingPlugin
 {
     /**
-     * Get name
-     *
      * @return string
      */
     public function getName()
@@ -32,8 +30,6 @@ class Setting extends SettingPlugin
     }
 
     /**
-     * Get title
-     *
      * @return string
      */
     public function getTitle()
@@ -42,11 +38,9 @@ class Setting extends SettingPlugin
     }
 
     /**
-     * Build menu for plugin
+     * @param ItemInterface $item
      *
-     * @param \Knp\Menu\ItemInterface $item
-     *
-     * @return \Knp\Menu\ItemInterface
+     * @return ItemInterface
      */
     public function buildMenu(ItemInterface $item)
     {
