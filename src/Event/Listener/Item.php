@@ -11,13 +11,10 @@
 namespace AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener;
 
 use AnimeDb\Bundle\CatalogBundle\Entity\Name;
+use AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Client;
 use Doctrine\ORM\EntityManagerInterface;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Repository\ItemRepository;
 use Doctrine\ORM\Event\LifecycleEventArgs;
-use Guzzle\Http\Message\Response;
-use Guzzle\Http\Message\Request;
-use Guzzle\Http\Client;
-use Guzzle\Http\Exception\BadResponseException;
 use Symfony\Component\Templating\EngineInterface;
 use AnimeDb\Bundle\CatalogBundle\Entity\Item as ItemCatalog;
 use AnimeDb\Bundle\CatalogBundle\Entity\Source;
@@ -48,15 +45,14 @@ class Item
     protected $rep;
 
     /**
-     * @var string
+     * @var Client
      */
-    protected $user_name = '';
+    protected $client;
 
     /**
      * @var string
      */
-    protected $user_password = '';
-
+    protected $host = '';
     /**
      * Sync the delete operation
      *
@@ -79,25 +75,11 @@ class Item
     protected $sync_update = true;
 
     /**
-     * @var string
-     */
-    const HOST = 'http://myanimelist.net/';
-
-    /**
-     * @var string
-     */
-    const API_URL = 'http://myanimelist.net/api/';
-
-    /**
-     * @var string
-     */
-    const API_KEY = '8069EC4798E98A3BC14382D9DAA2498C';
-
-    /**
      * @param EngineInterface $templating
      * @param EntityManagerInterface $em
+     * @param Client $client
+     * @param string $host
      * @param string $user_name
-     * @param string $user_password
      * @param bool $sync_remove
      * @param bool $sync_insert
      * @param bool $sync_update
@@ -105,19 +87,20 @@ class Item
     public function __construct(
         EngineInterface $templating,
         EntityManagerInterface $em,
+        Client $client,
+        $host,
         $user_name,
-        $user_password,
         $sync_remove,
         $sync_insert,
         $sync_update
     ) {
         $this->em = $em;
+        $this->host = $host;
+        $this->client = $client;
         $this->rep = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item');
         $this->templating = $templating;
-        $this->user_name = $user_name;
-        $this->user_password = $user_password;
 
-        if ($this->user_name) {
+        if ($user_name) {
             $this->sync_remove = $sync_remove;
             $this->sync_insert = $sync_insert;
             $this->sync_update = $sync_update;
@@ -134,7 +117,7 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_remove) {
             if ($id = $this->getId($entity)) {
-                $this->sendRequest('delete', $id, $this->renderEntry($entity));
+                $this->client->sendAction(Client::ACTION_UPDATE, $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
@@ -168,7 +151,7 @@ class Item
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
             if ($id = $this->getId($entity)) {
-                $this->sendRequest('add', $id, $this->renderEntry($entity));
+                $this->client->sendAction(Client::ACTION_ADD, $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
                 $notice->setMessage($this->templating->render(
@@ -200,7 +183,7 @@ class Item
     protected function addSource(ItemCatalog $entity)
     {
         if (!$this->getId($entity) && ($id = $this->findIdForItem($entity))) {
-            $source = (new Source())->setUrl(self::HOST.'anime/'.$id.'/');
+            $source = (new Source())->setUrl($this->host.'anime/'.$id.'/');
             $entity->addSource($source);
 
             $this->em->persist($source);
@@ -214,15 +197,15 @@ class Item
     public function postUpdate(LifecycleEventArgs $args)
     {
         $entity = $args->getEntity();
-        if ($entity instanceof ItemCatalog && $this->user_name && $this->sync_update) {
+        if ($entity instanceof ItemCatalog && $this->sync_update) {
             /* @var $mal_item ItemCatalog */
             $mal_item = $this->rep->findByCatalogItem($entity);
 
             if ($mal_item instanceof ItemMal) {
-                $this->sendRequest('update', $mal_item->getId(), $this->renderEntry($entity));
+                $this->client->sendAction(Client::ACTION_UPDATE, $mal_item->getId(), $this->renderEntry($entity));
 
             } elseif ($id = $this->getId($entity)) {
-                $this->sendRequest('add', $id, $this->renderEntry($entity));
+                $this->client->sendAction(Client::ACTION_ADD, $id, $this->renderEntry($entity));
 
             } else {
                 $notice = new Notice();
@@ -248,7 +231,7 @@ class Item
         // search in sources
         /* @var $source Source */
         foreach ($entity->getSources() as $source) {
-            if (strpos($source->getUrl(), self::HOST) === 0) {
+            if (strpos($source->getUrl(), $this->host) === 0) {
                 if (preg_match('#/(\d+)/#', $source->getUrl(), $mat)) {
                     return $mat[1];
                 }
@@ -290,54 +273,7 @@ class Item
         }
 
         // try search
-        if ($query) {
-            $client = new Client(self::API_URL);
-            /* @var $request Request */
-            $request = $client->get('anime/search.xml');
-            $request->setAuth($this->user_name, $this->user_password);
-            $request->getQuery()->set('q', $query);
-
-            try {
-                $data = $request->send()->getBody(true);
-            } catch (BadResponseException $e) {
-                return null;
-            }
-
-            if ($data == 'No results') {
-                return null;
-            }
-
-            $doc = new \DOMDocument();
-            $doc->loadXML(html_entity_decode($data));
-            $xpath = new \DOMXPath($doc);
-            $ids = $xpath->query('entry/id');
-            if ($ids->length == 1) {
-                return (int)$ids->item(0)->nodeValue;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param string $action add|update|delete
-     * @param integer $id
-     * @param string|null $data
-     *
-     * @return Response|null
-     */
-    protected function sendRequest($action, $id, $data = null)
-    {
-        $client = new Client(self::API_URL);
-        try {
-            $request = $client->post('animelist/'.$action.'/'.$id.'.xml', null, $data ? ['data' => $data] : []);
-            $request->setAuth($this->user_name, $this->user_password);
-            $request->setHeader('User-Agent', 'api-team-'.self::API_KEY);
-            return $request->send();
-        } catch (BadResponseException $e) {
-            // is not a critical error
-            return null;
-        }
+        return $query ? $this->client->search($query) : null;
     }
 
     /**
