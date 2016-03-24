@@ -20,3 +20,17 @@ services:
         class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Setting
         tags:
             -  { name: anime_db.setting }
+
+    anime_db.my_anime_list_sync.client:
+        class: AnimeDb\Bundle\MyAnimeListSyncBundle\Service\Client
+        public: false
+        arguments:
+            - '@anime_db.my_anime_list_sync.guzzle_client'
+            - '%anime_db.my_anime_list_sync.api.key%'
+            - '%anime_db.my_anime_list_sync.user.name%'
+            - '%anime_db.my_anime_list_sync.user.password%'
+
+    anime_db.my_anime_list_sync.guzzle_client:
+        class: Guzzle\Http\Client
+        public: false
+        arguments: [ '%anime_db.my_anime_list_sync.api.host%' ]

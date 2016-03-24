@@ -1,6 +1,11 @@
 parameters:
     anime_db.my_anime_list_sync.user.name: ''
     anime_db.my_anime_list_sync.user.password: ''
+
     anime_db.my_anime_list_sync.sync.remove: true
     anime_db.my_anime_list_sync.sync.insert: true
     anime_db.my_anime_list_sync.sync.update: true
+
+    anime_db.my_anime_list_sync.host: 'http://myanimelist.net/'
+    anime_db.my_anime_list_sync.api.host: 'http://myanimelist.net/api/'
+    anime_db.my_anime_list_sync.api.key: '8069EC4798E98A3BC14382D9DAA2498C'
