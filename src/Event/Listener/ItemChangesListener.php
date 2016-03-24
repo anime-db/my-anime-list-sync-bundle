@@ -33,16 +33,6 @@ class ItemChangesListener
     protected $templating;
 
     /**
-     * @var EntityManagerInterface
-     */
-    protected $em;
-
-    /**
-     * @var ItemRepository
-     */
-    protected $rep;
-
-    /**
      * @var Client
      */
     protected $client;
@@ -74,7 +64,6 @@ class ItemChangesListener
 
     /**
      * @param EngineInterface $templating
-     * @param EntityManagerInterface $em
      * @param Client $client
      * @param string $host
      * @param string $user_name
@@ -84,7 +73,6 @@ class ItemChangesListener
      */
     public function __construct(
         EngineInterface $templating,
-        EntityManagerInterface $em,
         Client $client,
         $host,
         $user_name,
@@ -92,10 +80,8 @@ class ItemChangesListener
         $sync_insert,
         $sync_update
     ) {
-        $this->em = $em;
         $this->host = $host;
         $this->client = $client;
-        $this->rep = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item');
         $this->templating = $templating;
 
         if ($user_name) {
@@ -114,7 +100,7 @@ class ItemChangesListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_remove) {
-            if ($id = $this->getId($entity)) {
+            if ($id = $this->getId($entity, $args->getEntityManager())) {
                 $this->client->sendAction(Client::ACTION_UPDATE, $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
@@ -122,8 +108,8 @@ class ItemChangesListener
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_delete.html.twig',
                     ['item' => $entity]
                 ));
-                $this->em->persist($notice);
-                $this->em->flush();
+                $args->getEntityManager()->persist($notice);
+                $args->getEntityManager()->flush();
             }
         }
     }
@@ -137,7 +123,7 @@ class ItemChangesListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            $this->addSource($entity);
+            $this->addSource($entity, $args->getEntityManager());
         }
     }
 
@@ -148,7 +134,7 @@ class ItemChangesListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_insert) {
-            if ($id = $this->getId($entity)) {
+            if ($id = $this->getId($entity, $args->getEntityManager())) {
                 $this->client->sendAction(Client::ACTION_ADD, $id, $this->renderEntry($entity));
             } else {
                 $notice = new Notice();
@@ -156,8 +142,8 @@ class ItemChangesListener
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_insert.html.twig',
                     ['item' => $entity]
                 ));
-                $this->em->persist($notice);
-                $this->em->flush();
+                $args->getEntityManager()->persist($notice);
+                $args->getEntityManager()->flush();
             }
         }
     }
@@ -171,21 +157,22 @@ class ItemChangesListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_update) {
-            $this->addSource($entity);
+            $this->addSource($entity, $args->getEntityManager());
         }
     }
 
     /**
      * @param ItemCatalog $entity
+     * @param EntityManagerInterface $em
      */
-    protected function addSource(ItemCatalog $entity)
+    protected function addSource(ItemCatalog $entity, EntityManagerInterface $em)
     {
-        if (!$this->getId($entity) && ($id = $this->findIdForItem($entity))) {
+        if (!$this->getId($entity, $em) && ($id = $this->findIdForItem($entity))) {
             $source = (new Source())->setUrl($this->host.'anime/'.$id.'/');
             $entity->addSource($source);
 
-            $this->em->persist($source);
-            $this->em->flush();
+            $em->persist($source);
+            $em->flush();
         }
     }
 
@@ -196,13 +183,15 @@ class ItemChangesListener
     {
         $entity = $args->getEntity();
         if ($entity instanceof ItemCatalog && $this->sync_update) {
+            /* @var $rep ItemRepository */
+            $rep = $args->getEntityManager()->getRepository('AnimeDbMyAnimeListSyncBundle:Item');
             /* @var $mal_item ItemCatalog */
-            $mal_item = $this->rep->findByCatalogItem($entity);
+            $mal_item = $rep->findByCatalogItem($entity);
 
             if ($mal_item instanceof ItemMal) {
                 $this->client->sendAction(Client::ACTION_UPDATE, $mal_item->getId(), $this->renderEntry($entity));
 
-            } elseif ($id = $this->getId($entity)) {
+            } elseif ($id = $this->getId($entity, $args->getEntityManager())) {
                 $this->client->sendAction(Client::ACTION_ADD, $id, $this->renderEntry($entity));
 
             } else {
@@ -211,8 +200,8 @@ class ItemChangesListener
                     'AnimeDbMyAnimeListSyncBundle:Notice:failed_update.html.twig',
                     ['item' => $entity]
                 ));
-                $this->em->persist($notice);
-                $this->em->flush();
+                $args->getEntityManager()->persist($notice);
+                $args->getEntityManager()->flush();
             }
         }
     }
@@ -221,10 +210,11 @@ class ItemChangesListener
      * Get MyAnimeList id for item
      *
      * @param ItemCatalog $entity
+     * @param EntityManagerInterface $em
      *
      * @return int
      */
-    protected function getId(ItemCatalog $entity)
+    protected function getId(ItemCatalog $entity, EntityManagerInterface $em)
     {
         // search in sources
         /* @var $source Source */
@@ -237,8 +227,10 @@ class ItemChangesListener
             }
         }
 
+        /* @var $rep ItemRepository */
+        $rep = $em->getRepository('AnimeDbMyAnimeListSyncBundle:Item');
         // get MyAnimeList item link
-        $mal_item = $this->rep->findByCatalogItem($entity);
+        $mal_item = $rep->findByCatalogItem($entity);
 
         if ($mal_item instanceof ItemMal) {
             return $mal_item->getId();
