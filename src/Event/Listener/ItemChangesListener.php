@@ -22,12 +22,10 @@ use AnimeDb\Bundle\AppBundle\Entity\Notice;
 use AnimeDb\Bundle\MyAnimeListSyncBundle\Entity\Item as ItemMal;
 
 /**
- * Listener item changes
- *
  * @package AnimeDb\Bundle\MyAnimeListSyncBundle\Event\Listener
  * @author  Peter Gribanov <info@peter-gribanov.ru>
  */
-class Item
+class ItemChangesListener
 {
     /**
      * @var EngineInterface
